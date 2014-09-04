@@ -1,0 +1,72 @@
+@(genForm: Form[forms.generate.GenerateForms])(implicit flash: Flash)
+
+@import BootstrapHelper._
+
+@main("Skalholt") {
+
+  @messages(genForm)
+  @helper.form(action = controllers.generate.routes.Generate.generateAll(), 'role -> "form", 'class -> "form-horizontal"){
+ <script  type="text/javascript">
+   function submitform(action){
+	  $('#messages').empty()
+      $('form').attr('action', action);
+      $('form').submit();
+   }
+</script>
+    <div class="container">
+      <fieldset>
+        <legend>Source Code Generate</legend>
+        <div class="row">
+          <div class="col-md-12">
+            @helper.inputText(genForm("outputFolder"), '_label -> "Output Folder", '_help -> "Place where the package folder structure should be put", '_labelclass -> "col-md-2 col-sm-4", '_valueclass -> "col-md-10 col-sm-8")
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            @helper.inputText(genForm("schema"), '_label -> "Schema", '_help -> "Target schema")
+            @helper.inputText(genForm("user"), '_label -> "User", '_help -> "database connection user name")
+            @helper.inputPassword(genForm("password"), '_label -> "Password", '_help -> "database connection password")
+          </div>
+          <div class="col-md-6">
+            @helper.select(genForm("slickDriver"),
+             Seq(("scala.slick.driver.H2Driver"-> "scala.slick.driver.H2Driver"),("scala.slick.driver.PostgresDriver"-> "scala.slick.driver.PostgresDriver")),
+             '_label -> "Slick Driver", '_help -> "Fully qualified name of Slick driver class, e.g. “scala.slick.driver.H2Driver”")
+
+            @helper.select(genForm("jdbcDriver"),
+             Seq(("org.h2.Driver"-> "org.h2.Driver"),("org.postgresql.Driver"-> "org.postgresql.Driver")),
+              '_label -> "Jdbc Driver", '_help -> "Fully qualified name of jdbc driver class, e.g. “org.h2.Driver”")
+            @helper.inputText(genForm("url"), '_label -> "Url", '_help -> "jdbc url, e.g. “jdbc:postgresql://localhost/test”")
+          </div>
+        </div>
+        <div class="row">
+            <div class="row">
+              <div class="col-md-6">
+                <p>
+                  <a href="#" onclick="submitform('@controllers.generate.routes.Generate.importData');" class="btn btn-info btn-block">
+                    <i class="glyphicon glyphicon-import"></i> Create Design Repository
+                  </a>
+                </p>
+              </div>
+              <div class="col-md-6">
+                <p>
+                  <a href="#" onclick="submitform('@controllers.generate.routes.Generate.generate');" class="btn btn-info btn-block">
+                    <i class="glyphicon glyphicon-export"></i> Source Code Generate
+                  </a>
+                </p>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <p>
+                  <a href="#" onclick="submitform('@controllers.generate.routes.Generate.generateAll');" class="btn btn-info btn-block">
+                    <i class="glyphicon glyphicon-import"></i> <i class="glyphicon glyphicon-export"></i> Create Design Repository and Source Code Generate
+                  </a>
+                </p>
+              </div>
+            </div>
+        </div>
+      </fieldset>
+    </div>
+    <hr>
+  }
+}

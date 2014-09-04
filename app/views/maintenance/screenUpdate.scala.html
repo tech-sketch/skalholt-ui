@@ -1,0 +1,640 @@
+@(screenUpdateForm: Form[forms.maintenance.ScreenUpdateForms],itemAndAction:List[(BigDecimal,models.Tables.ScreenActionRow)], findDefinition:List[(models.Tables.ScreenItemRow,String)], entityNmEns: Seq[(String,String)],screenNm: Option[String])(implicit flash: Flash)
+@import BootstrapHelperSm._
+
+@mainGenerator("Screen Update"){
+@helper.form(action =controllers.maintenance.routes.ScreenUpdate.update(), 'role -> "form",'class -> "form-horizontal", 'id -> "form-screen"){
+
+<div class="container">
+	<fieldset>
+		<legend>Screen Detail: @screenNm</legend>
+		<div class ="row">
+			<div class="col-md-4">
+			  	@helper.inputText(screenUpdateForm("screenId"), 'class -> "input-sm", '_legend -> "Screen ID", 'disabled -> "disabled")
+            </div>
+    		<div class="col-md-4">
+				@helper.inputText(screenUpdateForm("screenNm"), 'class -> "input-sm", '_label -> "Screen Name")
+    		</div>
+			<div class="col-md-4">
+				@helper.inputText(screenUpdateForm("subsystemNmEn"), 'class -> "input-sm", '_label -> "Subsystem Name", 'disabled -> "disabled")
+            </div>
+		</div>
+		<div class ="row">
+    		<div class="col-md-4">
+				@helper.select(screenUpdateForm("screenType"),
+					Seq(("Create","Create"),("Update","Update"),("Search","Search")),
+					'_default -> "",'class -> "input-sm", '_label -> "Screen Type",'disabled -> "disabled")
+    		</div>
+    		<div class="col-md-4">
+				@helper.select(screenUpdateForm("entityNmEn"), entityNmEns, '_default -> "",'class -> "input-sm", '_label -> "Entity Name", 'disabled -> "disabled")
+    		</div>
+		</div>
+
+<!-- jqGrid表示 -->
+		<div id="d_grid1" style="padding-top:5px;">
+			<div align=center>
+				<table id="itemList" class="jgrid"></table>
+			</div>
+			<div id="pagerItem" class="jgpager"></div>
+		</div>
+		<br>
+		<div align = "right">
+			<input id="sendGridAll" type="Button" value="Save Changes" class="btn btn-sm btn-info">
+			<input id = "sendDeleteAll" type="Button" value="Delete This Screen" class="btn btn-sm btn-info">
+			<input id = "cansel" type="Button" value="Cancel" class="btn btn-sm btn-info">
+		</div>
+	</fieldset>
+</div>
+
+    <input type="hidden" id="annotationCd" name="annotationCd">
+}
+<script type="text/javascript">
+     jQuery(document).ready(function()
+    		 {
+			var subGridTableId = new Array();
+			var subGridHidden = new Array();
+			var expandedCount = 0;
+			var colapsededCount = 0;
+			var savedRow =null;
+			var savedCol = null;
+			var savedItemRow = null;
+			var savedItemCol = null;
+
+			 var savedSubRow = null;
+			 var savedSubCol = null;
+
+			 var screenItemList=[
+			                     @for((screenItems, annotationDefinition)<- findDefinition){
+			                    	 {itemNo:"@screenItems(1)", itemNmEn : "@screenItems(4)", component : "@screenItems(8)", activeKb: "@screenItems(9)",annotationCd : "@annotationDefinition", displayDigit : "@screenItems(13)", requiredKb : "@screenItems(15)", searchConditionKb : "@screenItems(22)",searchresultFlag:"@screenItems(25)"},
+			                     }];
+
+
+    		 	        jQuery("#itemList").jqGrid({
+    		 	        	data:screenItemList,
+    		 	        	datatype:"local",
+    		 	        	colNames:[ 'No', 'Item Name',	'Component Type', 'Required','Validation', '','Search Condition','Search Result', 'Key', '' ],
+    		 	        	colModel:[
+    		 	        	          {index:'itemNo', name:'itemNo', width:30, sortable:false, editable:true, editrules:{ required : true}},
+    		 	        	          {index:'itemNmEn', name:'itemNmEn',width: 100, sortable:false,editable:true},
+    		 	        	         {
+    		 	        	        	  	index : 'component',
+    		 	        	        	  	name : 'component',
+    		 	        	        	  	width:90,
+    		 	        	        	  	editable : true,
+    		 	        	        	  	sortable:false,
+    		 	        	        	  	edittype : 'select',
+    		 	        	        	  	editoptions : {
+    		 	        	        		  value : "1:;2:button;3:checkbox;4:date;5:file;6:inputtext;7:label;8:link;9:password;10:radio;11:select;12:selectmultiple;13:text"
+    		 	        	        	  }
+    		 	        	         },
+    		 	        	         {
+    		 	        	        	 	index:'requiredKb',
+    		 	        	        	 	name:'requiredKb',
+    		 	        	        	 	width:60,
+    		 	        	        	 	align:"center",classes:"radio_class",
+    		 	        	        	 	edittype:"checkbox",
+    		 	        	        	 	formatter:"checkbox",
+										 	editable:true,
+										 	sortable:false,
+										 	formatoptions: {disabled : false},
+										 	editoptions:{value:"true:false"}
+										},
+										{
+											index : 'annotationCd',
+											name : 'annotationCd',
+											edittable : true,
+											sortable:false
+										},
+										{
+											index : 'search',
+											name : 'search',
+											width : 20,
+											sortable:false,
+											align : 'center',
+											formatter : function(cellval, opts,rowObject, rowData) {
+												return selectFormatter(cellval, opts,rowObject,'ui-icon-search');
+											}
+										},
+	    		 	        	        {
+
+											index : 'searchConditionKb',
+											name : 'searchConditionKb',
+											width:80,
+											editable : true,
+											sortable:false,
+											edittype : 'select',
+											editoptions : {
+												value : "1:; 2:==; 3:!=; 4:<=; 5:>; 6:>=; 7:contains; 8:startwith; 9:endwith; 10:in"
+											}
+										},
+										{
+											index:'searchresultFlag',
+											name:'searchresultFlag',
+											width:70,
+											align:"center",
+											classes:"radio_class",
+											edittype:"checkbox",
+											formatter:"checkbox",
+											sortable:false,
+											editable:true,
+											formatoptions: {disabled : false},
+										 	editoptions:{value:"1:0"}
+
+										},
+										{
+											index:'activeKb',
+											name:'activeKb',
+											width:30,
+											align:"center",
+											classes:"radio_class",
+											edittype:"checkbox",
+											formatter:"checkbox",
+											sortable:false,
+											editable:false,
+											formatoptions: {disabled : true},
+										 	editoptions:{value:"pk:"}
+
+										},
+										{
+											name: 'delrow',
+											width: 23,
+											align: 'center',
+											sortable:false,
+											formatter: function (
+													cellval, opts, rowObject, rowData) {
+												return delFormatter(cellval, opts, rowObject,'ui-icon-trash', 'del-link-class', 'delete');}
+										}
+										],
+							beforeEditCell: function (rowid, cellname, value, iRow, iCol) {
+								            // クリックされたセルを記録
+								            savedItemRow = iRow;
+								            savedItemCol = iCol;
+								        },
+    		 	        	height   : 250,
+    		 	        	width    :1000,
+							hidegrid : false,   //show/hide
+    		 	        	cellEdit :true,
+							pginput  : false, // 総ページ非表示
+              		        viewrecords : true,         //総レコード数の表示
+    		 	        	rowNum   :50,
+              		        cellsubmit :'clientArray',
+    		 	        	caption:'Items on This Screen',
+    		 	        	pager:'#pagerItem',
+    		 	        	subGrid: true,
+    		 	        	subGridBeforeExpand: function(subGrid_id, row_id){
+   		 	        		jQuery("#itemList").jqGrid('saveCell', savedItemRow, savedItemCol);
+    		 	        		var row = $('#itemList').getRowData(row_id);
+    		 	        		if(row.component == "button"||row.component == "link"){
+    		 	        			return true;
+    		 	        		}else{
+    		 	        		return false;
+    		 	        		}
+    		 	        	},
+    		 	        	subGridRowExpanded: function(subGrid_id, row_id) {
+    		 	        		// we pass two parameters
+    		 	        		// subGrid_id is a id of the div tag created
+								// whitin a table
+    		 					// data
+    		 	        		// the id of this elemenet is a combination of
+								// the "sg_" +
+    		 					// id of the row
+    		 	        		// the row_id is the id of the row
+    		 	        		// If we wan to pass additinal parameters to the
+								// url we can
+    		 					// use
+    		 	        		// a method getRowData(row_id) - which returns
+								// associative
+    		 					// array in type name-value
+    		 	        		// here we can easy construct the flowing
+
+								var subGrid_table_id = subGrid_id + "_t";
+									subGridTableId[expandedCount] = subGrid_id + "_t";
+    		 	        		var pagersub = "p_" + subGrid_table_id;
+    		 	        		$("#"+subGrid_id).html("<table id='" + subGrid_table_id + "' class='scroll'></table><div id='"+pagersub+"' class='scroll'></div>");
+
+
+    		 	        		//subGrid にaction設定
+    		 	        		var subGridData = [];
+    							var row = $('#itemList').getRowData(row_id);
+    							if(subGridHidden.length == 0){
+									@if(itemAndAction.length == 0){
+										subGridData = [ {
+											actionId : "",
+											actionNmEn : "",
+											forwardScreenId : "",
+											errorScreenId : ""
+										} ];
+									}else{
+	    		 	        			 @for((itemNo, actionList) <- itemAndAction){
+	    		 	        				 if(row.itemNo == @itemNo){
+	    		 	        					 subGridData = [{actionId:"@actionList.actionId",actionNmEn:"@actionList.actionNmEn",forwardScreenId:"@actionList.forwardScreenId",errorScreenId:"@actionList.errorScreenId"}];
+	    		 	        				 }}
+
+									}
+
+    		 	        		}else{
+
+									for (var i = 0; i < subGridHidden.length; i++) {
+
+										var sub = subGridHidden[i]
+										if (subGrid_table_id == sub.subGridId) {
+											subGridData = [ {
+												actionId : sub.actionId,
+												actionNmEn : sub.actionNmEn,
+												forwardScreenId : sub.forwardScreenId,
+												errorScreenId : sub.errorScreenId
+											} ];
+											break;
+										}
+									};
+
+    		 	        		};
+								if (subGridData.length == 0) {
+									subGridData = [ {
+										actionId : "",
+										actionNmEn : "",
+										forwardScreenId : "",
+										errorScreenId : ""
+									} ];
+								};
+
+    		 	        		expandedCount++;
+    		 	        		jQuery("#"+subGrid_table_id).jqGrid({
+    		 	        			data: subGridData,
+    		 	        			datatype: 'local',
+    		 	        			colNames: ['Action ID','Action Name','Forward Screen ID','Error Screen ID'],
+    		 	        			colModel: [
+    		 	        				{name:"actionId",index:"actionId", editable:true,width:187,sortable:false},
+    		 	        				{name:"actionNmEn",index:"actionNmEn",editable:true,width:187,sortable:false},
+    		 	        				{name:"forwardScreenId",index:"forwardScreenId",editable:true,width:187,sortable:false},
+    		 	        				{name:"errorScreenId",index:"errorScreenId",editable:true,width:187,sortable:false}
+    		 	        				],
+										beforeEditCell: function (rowid, cellname, value, iRow, iCol) {
+								            // クリックされたセルを記録
+								            savedSubRow = iRow;
+								            savedSubCol = iCol;
+								        },
+								    width : '750',
+								    height: 'auto',
+    		     		            cellEdit: true,
+    		     		            shrinkToFit : false,
+    		     		            cellsubmit: 'clientArray',
+    		 	        		});
+
+    		 	        },
+						// マイナスボタン押されたとき、subGridの値を保存する
+						subGridRowColapsed : function(subGrid_id, row_id) {
+
+							var subGrid_table_id = subGrid_id + "_t";
+				            $('#' + subGrid_table_id).jqGrid('saveCell', savedSubRow, savedSubCol);
+							var rowId = $('#' + subGrid_table_id).jqGrid('getDataIDs')
+							var row = $('#' + subGrid_table_id).getRowData(rowId);
+
+							subGridHidden.some(function(v, i) {
+										if (v.subGridId == subGrid_table_id) {
+											subGridHidden.splice(i,1);
+											colapsededCount = i;
+										}
+
+									});
+
+							if (row.actionId) {
+								subGridHidden[colapsededCount] = {
+									subGridId : subGrid_table_id,
+									actionId : row.actionId,
+									actionNmEn : row.actionNmEn,
+									forwardScreenId : row.forwardScreenId,
+									errorScreenId : row.errorScreenId
+								}
+								colapsededCount++;
+							}
+						}
+
+
+    		 	        });
+    		          $("#itemList").jqGrid('navGrid','#pagerItem',{del:false, add:false, edit:false, search:false, refresh:false})
+
+         		        $("#sendGridAll").click(function() {
+    			            jQuery("#itemList").jqGrid('saveCell', savedItemRow, savedItemCol);
+
+        		            // グリッド内の全データを配列に取り込む
+
+        		            var screens = new Array();
+                            var screenItems = new Array();
+                            var screenActions = new Array();
+							var screenType=""
+
+							// i行目のj列目のセルを取得
+							screens = [ {
+								"screenId" : document.getElementById('screenId').value,
+								"screenNm" : document.getElementById('screenNm').value,
+								"subsystemNmEn" : document.getElementById('subsystemNmEn').value,
+								"screenType" : document.getElementById('screenType').value,
+								"entityNmEn" : document.getElementById('entityNmEn').value
+							} ]
+
+        		            var rowIdItem = $("#itemList").jqGrid('getDataIDs');
+                            var j = 0;
+
+        		            for (var i = 0; i < rowIdItem.length; i++) {
+        		                var row = $('#itemList').getRowData(rowIdItem[i]);
+
+								var subgrid = "itemList_" + rowIdItem[i] + "_t"
+								jQuery('#' + subgrid).jqGrid('saveCell',savedSubRow,savedSubCol);
+
+								//Get action
+	   	 	        			 @for((itemNo, actionList) <- itemAndAction){
+	   	 	        				 if(row.itemNo == @itemNo){
+	   	 	        					subGridHidden[colapsededCount] = {subGridId: subgrid, actionId:"@actionList.actionId",actionNmEn:"@actionList.actionNmEn",forwardScreenId:"@actionList.forwardScreenId",errorScreenId:"@actionList.errorScreenId"};
+	   	 	        				 }
+	   	 	        				colapsededCount++;
+	   	 	        				}
+
+								var rowId = $('#' + subgrid).jqGrid('getDataIDs')
+								var subRow = $('#' + subgrid).getRowData(rowId);
+								var actionId = ""
+								var actionNmEn =""
+								var forwardScreenId =""
+								var errorScreenId = ""
+
+								if(row.component == "button" || row.component == "link"){
+
+									if(subRow.actionId == undefined){         // hidden
+										var subHidden = subGridHidden.filter(
+								 		function(item,index) {
+										if (item.subGridId == subgrid)
+											return true;
+										});
+
+									if(subHidden.length != 0 ){
+										var subRow = subHidden[0];
+										if(subRow.actionId == ""){
+											actionId =undefined
+										}else{
+											actionId = subRow.actionId
+										}
+										if(subRow.actionNmEn == ""){
+											actionNmEn =undefined
+										}else{
+											actionNmEn = subRow.actionNmEn
+										}
+										if(subRow.forwardScreenId == ""){
+											forwardScreenId =undefined
+										}else{
+											forwardScreenId = subRow.forwardScreenId
+										}
+										if(subRow.errorScreenId == ""){
+											errorScreenId =undefined
+										}else{
+											errorScreenId = subRow.actionId
+										}
+										screenActions[j] = {
+											"screenId" : document.getElementById('screenId').value,
+											"actionId" : actionId,
+											"actionNmEn" : actionNmEn,
+											"forwardScreenId" : forwardScreenId,
+											"errorScreenId" : errorScreenId
+														}
+										j++
+									}
+
+								}else{      // Open
+
+									if(subRow.actionId != ""){
+										if(subRow.actionId == ""){
+											actionId =undefined
+										}else{
+											actionId = subRow.actionId
+										}
+										if(subRow.actionNmEn == ""){
+											actionNmEn =undefined
+										}else{
+											actionNmEn = subRow.actionNmEn
+										}
+										if(subRow.forwardScreenId == ""){
+											forwardScreenId =undefined
+										}else{
+											forwardScreenId = subRow.forwardScreenId
+										}
+										if(subRow.errorScreenId == ""){
+											errorScreenId =undefined
+										}else{
+											errorScreenId = subRow.actionId
+										}
+										screenActions[j] = {
+												"screenId": document.getElementById('screenId').value,
+												"actionId" : actionId,
+												"actionNmEn" : actionNmEn,
+												"forwardScreenId" : forwardScreenId,
+												"errorScreenId" : errorScreenId
+													}
+										j++
+										}
+								}
+							}
+								var itemNm = ""
+								var component = ""
+								var annotationCd = ""
+								var searchConditionKb = ""
+								var activeKb = ""
+								if(row.itemNmEn == ""){
+									itemNm = undefined
+								}else{
+									itemNm = row.itemNmEn
+								}
+								if(row.component == ""){
+									component = undefined
+								}else{
+									component = row.component
+								}
+								if(row.annotationCd == ""){
+									annotationCd = undefined
+								}else{
+									annotationCd = row.annotationCd
+								}
+								if(row.searchConditionKb == ""){
+									searchConditionKb = undefined
+								}else{
+									searchConditionKb = row.searchConditionKb
+								}
+								if(row.activeKb == ""){
+									activeKb = undefined
+								}else{
+									activeKb = row.activeKb
+								}
+								screenItems[i] = {
+												"screenId": document.getElementById('screenId').value,
+												"itemNo" : row.itemNo,
+												"itemNmEn" : itemNm,
+												"component" : component,
+												"requiredKb" : row.requiredKb,
+												"searchConditionKb" : searchConditionKb,
+												"activeKb" : activeKb,
+												"searchresultFlag" : row.searchresultFlag,
+												"annotationCd" : annotationCd,
+												"actionId":subRow.actionId
+	          		        	                }
+										};
+
+
+        		            $.ajax({
+        		                type: 'POST',
+        		                url: '/screen/update/update/',
+        		                async: false,    // 非同期通信フラグ
+        		                data:
+            		                JSON.stringify(
+            		                		{ jsonScreen : screens,
+            		                		  jsonItem : screenItems,
+            		                		  jsonAction : screenActions}
+        	    		             ),
+        		                success: function(data, dataType) {
+        		                    confirm("Completion of registration");
+        		                    console.log('success');
+        		                },
+        		                error: function(res, textStatus, xhr) {
+        		                    alert("Failed to register");
+        		                },
+        		                dataType: 'text',
+            		            contentType: 'text/json'
+        		            });
+
+        		            return true;
+       		        })
+
+       		        /** Delete */
+    		        $("#sendDeleteAll").click(function() {
+			            jQuery("#itemList").jqGrid('saveCell', savedItemRow, savedItemCol);
+			            if(window.confirm("Are you sure to delete?")){
+
+    		            // グリッド内の全データを配列に取り込む
+
+    		            var screens = new Array();
+                        var screenItems = new Array();
+                        var screenActions = new Array();
+
+						var tblTbody = document.getElementById('screen_table');
+						// i行目のj列目のセルを取得
+						screens = [ {
+							"screenId" : document.getElementById('screenId').value
+						}];
+    		            var rowIdItem = $("#itemList").jqGrid('getDataIDs');
+    		            for (var i = 0; i < rowIdItem.length; i++) {
+    		                var row = $('#itemList').getRowData(rowIdItem[i]);
+                        	  screenItems[i] = {
+										"screenId": document.getElementById('screenId').value,
+										"itemNo" : row.itemNo
+        		                        }
+
+    		            }
+    		            $.ajax({
+    		                type: 'POST',
+    		                url: '/screen/allDelete/',
+    		                async: false,    // 非同期通信フラグ
+    		                data:
+        		                JSON.stringify(
+        		                		{ jsonScreen : screens,
+          		                		  jsonItem : screenItems
+          		                		  }
+    	    		             ),
+    		                success: function(data, dataType) {
+    		                    confirm("Successfully deleted");
+    		                    console.log('success');
+    		                    window.location.assign("/generate/screenSearch/")
+    		                },
+    		                error: function(res, textStatus, xhr) {
+    		                    alert("Delete failed");
+    		                },
+    		                dataType: 'text',
+        		            contentType: 'text/json'
+    		            });
+    		            return true;
+    		            }else{
+    		            	return false;
+    		            }
+    		            })
+
+       		        /** Cansel */
+    		        $("#cansel").click(function() {
+    		        	 window.location.assign("/generate/screenSearch/")
+    		        });
+
+
+    		 });
+
+    		 /** 削除処理 */
+    		 function delFormatter(cellval, opts, rowObject, icon, link_class, link_action, rowData) {
+    		   var itemNo = rowObject.itemNo
+    		   var img = '<span class="ui-icon ' + icon + ' icon"><span/>';
+    		 	  var link = '<a href="' + 'javascript:void(0)' + '" onClick="' + 'delRow(rel)' + '" class="' + link_class + '" rel="' + opts.rowId  + '" >' + img + '</a>';
+    		      return link;
+    		 };
+    		 /** 行のみ削除 */
+    		 function delRow(rel){
+    			 var selRow = $('#'+rel),   // get the row (<tr> element having// id=rowid)
+	    		     nextRow = selRow.next(); // get the next row
+    			if (nextRow.hasClass('ui-subgrid')) {
+    			// if the next row is a subGrid one should remove it
+    		    nextRow.remove();
+    		}
+
+    		 $("#itemList").delRowData(rel);
+
+    		 };
+
+
+
+/** 選択処理 */
+function selectFormatter(cellval, opts, rowObject, icon, link_class,link_action, rowData) {
+	var screenId = document.getElementById("screenId").value
+	var itemNo = ""
+		if (rowObject.itemNo == ""){
+		     itemNo = '%20'
+		}else{
+			 itemNo = rowObject.itemNo
+		}
+	var img = '<span class="ui-icon ' + icon + ' icon"><span/>';
+	var option = "m_win(this.href," + "'" + screenId  +  "'" + ",850,350);" + "return false;"
+	var link = '<a href="' + '/validation/' + opts.rowId + '/' + screenId + '/' + itemNo + '/' + 'select/"' + 'onClick=' + '"' + option + '"' +  '>' + img + '</a>'
+	return link;
+
+}
+
+function m_win(url, windowname, width, height) {
+	var features = "location=no,menubar=no,status=yes,scrollbars=yes,resizable=yes,toolbar=no";
+	if (width) {
+		if (window.screen.width > width)
+			features += ", left=" + (window.screen.width - width) / 2;
+		else
+			width = window.screen.width;
+			features += ", width=" + width;
+		}
+		if (height) {
+			if (window.screen.height > height)
+				features += ", top=" + (window.screen.height - height) / 2;
+			else
+				height = window.screen.height;
+				features += ", height=" + height;
+			}
+		window.open(url, windowname, features);
+	}
+
+function set(rowId) {
+	var validations = ""
+	if(document.getElementById("annotationCd").value == ""){
+		 validations = " "
+	}else{
+		validations = document.getElementById("annotationCd").value
+	}
+	$("#itemList").setCell(rowId, "annotationCd",validations, "", "")
+};
+
+function getValue(rowId) {
+	return	$("#itemList").getCell(rowId, "annotationCd")
+	}
+
+</script>
+
+}
+
+
+
+

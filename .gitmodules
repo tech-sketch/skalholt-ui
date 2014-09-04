@@ -1,0 +1,3 @@
+[submodule "skalholt-core"]
+	path = skalholt-core
+	url = https://github.com/tech-sketch/skalholt-core.git

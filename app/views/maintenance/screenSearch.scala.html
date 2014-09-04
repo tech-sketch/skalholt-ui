@@ -1,0 +1,111 @@
+@(screenSearchForm: Form[forms.maintenance.ScreenSearchForms],screens: List[(models.Tables.ScreenRow, Option[String])], entityNmEns: Seq[(String,String)])(implicit flash:Flash)
+@import BootstrapHelperSm._
+
+@mainGenerator("Screen search"){
+  @helper.form(action = controllers.maintenance.routes.ScreenSearch.search(), 'role -> "form", 'class -> "form-horizontal"){
+    <div class="container">
+      <fieldset>
+        <legend>Screens</legend>
+
+        <div class="row">
+          <div class="col-md-4">
+            @helper.inputText(screenSearchForm("screenId"), 'class -> "input-sm", '_label -> "Screen ID")
+          </div>
+          <div class="col-md-4">
+            @helper.inputText(screenSearchForm("screenNm"), 'class -> "input-sm", '_label -> "Screen Name")
+          </div>
+          <div class="col-md-4">
+            @helper.inputText(screenSearchForm("subsystemNmEn"), 'class -> "input-sm", '_label -> "Subsystem Name")
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-4">
+            @helper.select(screenSearchForm("screenType"), Seq(("Create","Create"),("Update","Update"),("Search","Search")),'_default -> "", 'class -> "input-sm", '_label -> "Screen Type")
+          </div>
+          <div class="col-md-4">
+     		@helper.select(screenSearchForm("entityNmEn"), entityNmEns, '_default -> "",'class -> "input-sm", '_label -> "Entity Name")
+          </div>
+        </div>
+      </fieldset>
+        <div align = "right"><input type="submit" value="Search" class="btn btn-sm btn-info"></div>
+    </div>
+
+ <div class="col-md-12" align="center">
+  <!-- jqGrid表示 -->
+   <div class="row-fluid">
+    <div id="d_grid1" style="padding-top:5px;">
+     <table id="list" class="jgrid">
+     </table>
+     <div id="pagertb" class="jgpager"></div>
+    </div>
+   </div>
+  </div>
+
+}
+		<!-- jqGridの設定 -->
+		<script type="text/javascript">
+
+		jQuery(document).ready(function()
+		{
+			@if(screens){
+ 			var screenList = [
+		      @for((screen, entityNmEn) <- screens){
+				      {screenId:"@screen.screenId", screenNm:"@screen.screenNm", subsystemNmEn: "@screen.subsystemNmEn", screenType:"@screen.screenType", entityNmEn:"@entityNmEn"},
+				                   }];
+			}else{
+	 			var screenList = {screenId:"", screenNm:"",  subsystemNmEn: "", screenType:"", entityNmEn:""}
+			}
+			jQuery("#list").jqGrid({
+			 data: screenList,
+			 datatype:"local",
+		     colNames:['Screen ID', 'Screen Name','Subsystem Name', 'Screen Type', 'Entity Name',''],
+		     colModel:[
+		               {index:'screenId', name:'screenId', key:true },
+		               {index:'screenNm', name:'screenNm'},
+		               {index:'subsystemNmEn', name:'subsystemNmEn'},
+		               {index:'screenType', name:'screenType'},
+		               {index:'entityNmEn', name:'entityNmEn'},
+	                   {name: 'update', width: 25, sortable:false, align: 'center', formatter: function (cellval, opts, rowObject, rowData) {
+	                          return upFormatter(cellval, opts, rowObject,
+	                                  'ui-icon-pencil', 'up-link-class', 'update');
+	                                   } }
+		                  ],
+            hidegrid : false,
+			height : 300,
+			width : 1000,
+		    cellEdit    : false,			   //true クリックしたセルの編集
+		    cellsubmit  :'clientArray',
+			pginput     : false,        // 総ページ非表示
+		    pgbuttons   : true,         //pager button
+		    viewrecords : true,         //総レコード数の表示
+		    rowNum      : 50,
+		    sortname    : 'screenId',
+		    sortorder   : "ASC",
+		    pager       :'#pagertb',
+		    caption     : 'Result of Search'
+			});
+		});
+
+
+
+		function upFormatter(cellval, opts, rowObject, icon, link_class, link_action, rowData) {
+  		  var img = '<span class="ui-icon ' + icon + ' icon"><span/>';
+ 		  var link = '<a href="' + '/screen/' + opts.rowId + '/update/' + '" class="' + link_class + '" rel="' + opts.rowId  + '" >' + img + '</a>';
+		return link;
+		}
+
+
+	  	 </script>
+
+	  </body>
+     </head>
+	</html>
+
+
+
+
+
+
+
+
+}

@@ -1,0 +1,28 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                           controllers.Application.index
+
+# Generator
+GET     /skalholt/                  controllers.generate.Generate.index
+GET     /skalholt/generateall/      controllers.generate.Generate.generateAll
+GET     /skalholt/import/           controllers.generate.Generate.importData
+GET     /skalholt/generate/         controllers.generate.Generate.generate
+GET     /skalholt/regenerate/       controllers.generate.Generate.regenerate
+
+# Maintenance
+# Screen page
+GET     /screen/:screenId/update/            controllers.maintenance.ScreenUpdate.index(screenId:String)
+POST    /screen/update/update/               controllers.maintenance.ScreenUpdate.update
+POST    /screen/allDelete/                   controllers.maintenance.ScreenUpdate.allDelete
+
+# Annotation page
+GET     /validation/:rowId/:screenId/:itemNo/select/   controllers.maintenance.AnnotationEdit.select(rowId:String, screenId:String,itemNo:String)
+
+GET     /generate/screenSearch/                                         controllers.maintenance.ScreenSearch.index
+POST    /generate/screenSearch/search/                                  controllers.maintenance.ScreenSearch.search
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)

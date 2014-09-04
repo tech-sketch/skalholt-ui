@@ -1,0 +1,147 @@
+@(annotationForm: Form[forms.maintenance.Anno], annotationDefinitionList:List[(models.Tables.AnnotationRow, (Option[String],Option[String],Option[String]))], rowId:String)
+
+@import BootstrapHelper._
+
+@mainAnnotationSelect("Validation Select"){
+<div class="container">
+    <div class="span12" style="padding-top:5px;" align="center">
+  <!-- jqGrid表示 -->
+     <div class="row-fluid">
+      <div id="d_grid1" style="padding-top:5px;">
+       <table id="list" class="jgrid">
+       </table>
+      <div id="pagertb" class="jgpager"></div>
+     </div>
+    </div>
+   </div>
+  <div align="left" style="margin-top: 5px">
+    <input id = "onClickSelect" type = "button" value ="Select" class="btn btn-sm btn-info">
+    <input id = "onClickNotSelect" type = "button" value ="Clear" class="btn btn-sm btn-info">
+    <input id = "onClickClose" type = "button" value ="Close" class="btn btn-sm btn-info">
+  </div>
+
+ </div>
+      <!-- jqGridのパラメータ設定 -->
+     <script type="text/javascript">
+     function selRow(id) {
+ 	    if (id) {
+ 	        $("#list").jqGrid('setSelection', id);
+ 	    }
+ 	}
+     jQuery(document).ready(function()
+ 		    {
+   	    var annotList = [
+     	            	    @for((annotation, (definitionValue1, definitionValue2, definitionValue3)) <- annotationDefinitionList){
+     	                         { annotationCd:"@annotation.annotationCd", argument1:"@annotation.argument1", definitonValue1:"@definitionValue1", argument2:"@annotation.argument2", definitonValue2:"@definitionValue2",argument3:"@annotation.argument3", definitonValue3:"@definitionValue3"},
+     	                          }];
+	        	$("#list").jqGrid({
+         	          	data: annotList,
+         	            datatype: "local",
+   		            onclickSubmit: function(options, rowId){             //サーバに送信するデータを追加する
+   		                                    var rowData = jQuery(this).getRowData(rowId);
+   		                                    cellValue = rowData['annotationCd'];
+   		                                     },
+   		            colNames:['','Validation Code', 'Attribute1','Value1','Attribute2','Value2','Attribute3', 'Value3'],
+                       colModel: [
+                               {index:'rb', name:'rb', align:'center', width:20, filter:false},
+                               {index:'annotationCd', name:'annotationCd', key:true},
+   		                       {index:'argument1', name:'argument1'},
+  		                       {index:'definitonValue1', name:'definitonValue1', width:50},
+   		                       {index:'argument2', name:'argument2'},
+   		                       {index:'definitonValue2', name:'definitonValue2', width:50},
+   		                       {index:'argument3', name:'argument3'},
+   		                       {index:'definitonValue3', name:'definitonValue3', width:50}
+       		                  ],
+       		           //radio button
+       		           gridComplete: function() {
+                         var ids = $("#list").jqGrid('getDataIDs');
+                         for(var i = 0; i < ids.length; i++) {
+                          j = i + 1;
+                          var rbtn = '<input type="radio" name="rbtn" id="rbtn' + j + '" ' +
+                             'onclick="selRow(\'' + ids[i] + '\')"/>';
+                          $("#list").jqGrid('setRowData', ids[i], {rb:rbtn});
+                          }
+                        },
+                       // 行の選択でラジオボタンも選択
+                       onSelectRow: function(id){
+                        // 現在の選択行を取得
+                        var row = $("#list").jqGrid('getGridParam', 'selrow');
+                        // 行IDを取得
+                        var ids = $("#list").jqGrid('getDataIDs');
+                        for (var i = 0; i < ids.length; i++) {
+                         if (row == ids[i])
+                           break;  // 行IDが一致したので抜ける
+                           }
+                         if (i < ids.length) {
+                           id = i + 1;
+                           var obj = document.getElementById("rbtn" + id);
+                           if(obj)
+                            obj.checked = true;
+                          }
+                         },
+					hidegrid : false,   //show/hide
+   		            cellsubmit  :'clientArray',
+		 	        pgbuttons: false, //pager button
+   		            sortname    : 'annotationCd',
+   		            sortorder   : "ASC",
+   		            pager       :'#pagertb',
+   		            caption     : 'Validations',
+       		        viewrecords : true,         //総レコード数の表示
+					pginput : false // 総ページ非表示
+	        	});
+                 $("#list").jqGrid('navGrid','#pagertb',{del:false, add:false, edit:false, search:false, refresh:false})
+                 //親ウィンドウから値を取得
+           			  var rowId = "@rowId"
+                 window.onload = function() {
+                     var windowData = window.opener.getValue(rowId);
+                     if(windowData){
+             		var annotationArray =  windowData.split(",")
+                     for (var i = 0; i< annotationArray.length ; ++i){
+                     	$("#list").setSelection(annotationArray[i])
+                     }
+                      }}
+
+                 /** 行の選択*/
+                 $("#onClickSelect").click(function(){
+                     var selrows = $("#list").jqGrid('getGridParam', 'selrow');
+               	     var annotationCd = selrows;
+           		    // 親ウインドウに値を返す
+           		     if (opener) {
+           		        window.opener.document.getElementById("annotationCd").value = annotationCd;
+
+           		        // 親ウインドウのonchangeイベントを強制的に発生させる
+           		        opener.set(rowId)
+           		        close();
+         		  		}
+                 });
+                 $("#onClickNotSelect").click(function(){
+                     // 現在の選択行を取得
+                     var row = $("#list").jqGrid('getGridParam', 'selrow');
+                     // 行IDを取得
+                     var ids = $("#list").jqGrid('getDataIDs');
+                     for (var i = 0; i < ids.length; i++) {
+                      if (row == ids[i])
+                        break;  // 行IDが一致したので抜ける
+                        }
+                      if (i < ids.length) {
+                        id = i + 1;
+                        var obj = document.getElementById("rbtn" + id);
+                        if(obj)
+                         obj.checked = false;
+                       }
+            		     if (opener) {
+                		        window.opener.document.getElementById("annotationCd").value = "";
+                		        // 親ウインドウのonchangeイベントを強制的に発生させる
+                		        opener.set(rowId)
+                		        close();
+              		  		}
+                 });
+                 $("#onClickClose").click(function(){
+                	 window.close();
+                 });
+
+ 		    });
+
+     </script>
+
+}
