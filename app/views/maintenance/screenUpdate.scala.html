@@ -71,7 +71,7 @@
     		 	        jQuery("#itemList").jqGrid({
     		 	        	data:screenItemList,
     		 	        	datatype:"local",
-    		 	        	colNames:[ 'No', 'Item Name',	'Component Type', 'Required','Validation', '','Search Condition','Search Result', 'Key', '' ],
+    		 	        	colNames:[ 'No', 'Item Name',	'Component Type', 'Required','Validation', '','Search Condition','Search Result', 'Key'],
     		 	        	colModel:[
     		 	        	          {index:'itemNo', name:'itemNo', width:30, sortable:false, editable:true, editrules:{ required : true}},
     		 	        	          {index:'itemNmEn', name:'itemNmEn',width: 100, sortable:false,editable:true},
@@ -153,8 +153,8 @@
 											formatoptions: {disabled : true},
 										 	editoptions:{value:"pk:"}
 
-										},
-										{
+										}
+/*										{
 											name: 'delrow',
 											width: 23,
 											align: 'center',
@@ -163,7 +163,7 @@
 													cellval, opts, rowObject, rowData) {
 												return delFormatter(cellval, opts, rowObject,'ui-icon-trash', 'del-link-class', 'delete');}
 										}
-										],
+*/										],
 							beforeEditCell: function (rowid, cellname, value, iRow, iCol) {
 								            // クリックされたセルを記録
 								            savedItemRow = iRow;
