@@ -48,7 +48,6 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
         }
       case _ => Seq(("", "-- Tables is not found."))
     }
-
     Ok(views.html.maintenance.screenUpdate(screenUpdateForm.fill(form), itemAndAction, findDefinitionList, entityNmEns, screen.screenNm))
   }
 
@@ -88,10 +87,10 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
         j2s(item, "screenId"),
         j2sBI(item, "itemNo"),
         j2os(item, "itemNmEn"),
-        None,
+        j2os(item, "insideItemNmEn"),
         j2os(item, "itemNmEn"),
         None,
-        None,
+        j2os(item, "insideItemNmEn"),
         None,
         j2os(item, "component"),
         j2os(item, "activeKb"),

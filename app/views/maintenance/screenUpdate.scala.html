@@ -62,20 +62,29 @@
 			 var savedSubRow = null;
 			 var savedSubCol = null;
 
+			 var format = true
+			 var editable = false
+			 var screenType = document.getElementById('screenType').value
+			 if (screenType == "Search"){
+				 format = false
+				 editable = true
+			 }
+
 			 var screenItemList=[
 			                     @for((screenItems, annotationDefinition)<- findDefinition){
-			                    	 {itemNo:"@screenItems(1)", itemNmEn : "@screenItems(4)", component : "@screenItems(8)", activeKb: "@screenItems(9)",annotationCd : "@annotationDefinition", displayDigit : "@screenItems(13)", requiredKb : "@screenItems(15)", searchConditionKb : "@screenItems(22)",searchresultFlag:"@screenItems(25)"},
+			                    	 {itemNo:"@screenItems(1)", itemNmEn : "@screenItems(4)", insideItemNmEn : "@screenItems(6)", component : "@screenItems(8)", activeKb: "@screenItems(9)",annotationCd : "@annotationDefinition", displayDigit : "@screenItems(13)", requiredKb : "@screenItems(15)", searchConditionKb : "@screenItems(22)",searchresultFlag:"@screenItems(25)"},
 			                     }];
 
 
     		 	        jQuery("#itemList").jqGrid({
     		 	        	data:screenItemList,
     		 	        	datatype:"local",
-    		 	        	colNames:[ 'No', 'Item Name',	'Component Type', 'Required','Validation', '','Search Condition','Search Result', 'Key'],
+    		 	        	colNames:[ 'No', 'Item Name', 'Column Name', 'Component Type', 'Required','Validation', '','Search Condition','Search Result', 'Key'],
     		 	        	colModel:[
     		 	        	          {index:'itemNo', name:'itemNo', width:30, sortable:false, editable:true, editrules:{ required : true}},
     		 	        	          {index:'itemNmEn', name:'itemNmEn',width: 100, sortable:false,editable:true},
-    		 	        	         {
+    		 	        	          {index:'insideItemNmEn', name:'insideItemNmEn',width: 100, sortable:false,editable:false},
+    		 	        	          {
     		 	        	        	  	index : 'component',
     		 	        	        	  	name : 'component',
     		 	        	        	  	width:90,
@@ -115,11 +124,10 @@
 											}
 										},
 	    		 	        	        {
-
 											index : 'searchConditionKb',
 											name : 'searchConditionKb',
 											width:80,
-											editable : true,
+											editable : editable,
 											sortable:false,
 											edittype : 'select',
 											editoptions : {
@@ -134,9 +142,9 @@
 											classes:"radio_class",
 											edittype:"checkbox",
 											formatter:"checkbox",
-											sortable:false,
-											editable:true,
-											formatoptions: {disabled : false},
+											sortable: false,
+											editable: editable,
+											formatoptions: {disabled : format},
 										 	editoptions:{value:"1:0"}
 
 										},
@@ -180,6 +188,16 @@
     		 	        	caption:'Items on This Screen',
     		 	        	pager:'#pagerItem',
     		 	        	subGrid: true,
+    		 	        	subGridOptions:{
+	   		 	        		"plusicon"  : "ui-icon-triangle-1-e",
+    		 	                "minusicon" : "ui-icon-triangle-1-s",
+    		 	                "openicon"  : "ui-icon-arrowreturn-1-e",
+    		 	       		    // load the subgrid data only once
+    		 	       		    // and the just show/hide
+    		 	       			"reloadOnExpand" : false,
+    		 	       			// select the row when the expand column is clicked
+    		 	       			"selectOnExpand" : true
+    		 	        	},
     		 	        	subGridBeforeExpand: function(subGrid_id, row_id){
    		 	        		jQuery("#itemList").jqGrid('saveCell', savedItemRow, savedItemCol);
     		 	        		var row = $('#itemList').getRowData(row_id);
@@ -313,6 +331,33 @@
     		 	        });
     		          $("#itemList").jqGrid('navGrid','#pagerItem',{del:false, add:false, edit:false, search:false, refresh:false})
 
+    		          /** 行の追加 */
+/*    		          $("#itemList").jqGrid('navButtonAdd', "#pagerItem", {
+    		           caption:"",
+    		           buttonicon: "ui-icon-plus",
+    		           title:"Add empty row",
+    		           onClickButton: function(){
+    						var datarow = {
+    								itemNo : "",
+    								itemNmEn : "",
+    								insideItemNmEn : "",
+    								component : "",
+    								requiredKb : "",
+    								searchConditionKb : "",
+    								activeKb : "",
+    								searchresultFlag : "",
+    								annotationCd : "",
+    								search : "",
+    								delrow : ""
+    							},
+    		                 newId = $.jgrid.randId();
+
+    		            $("#itemList").addRowData(newId,datarow,"last");
+    		            },
+    		            position:"last"
+    		           });
+*/
+
          		        $("#sendGridAll").click(function() {
     			            jQuery("#itemList").jqGrid('saveCell', savedItemRow, savedItemCol);
 
@@ -345,8 +390,8 @@
 	   	 	        			 @for((itemNo, actionList) <- itemAndAction){
 	   	 	        				 if(row.itemNo == @itemNo){
 	   	 	        					subGridHidden[colapsededCount] = {subGridId: subgrid, actionId:"@actionList.actionId",actionNmEn:"@actionList.actionNmEn",forwardScreenId:"@actionList.forwardScreenId",errorScreenId:"@actionList.errorScreenId"};
+		   	 	        				colapsededCount++;
 	   	 	        				 }
-	   	 	        				colapsededCount++;
 	   	 	        				}
 
 								var rowId = $('#' + subgrid).jqGrid('getDataIDs')
@@ -465,6 +510,7 @@
 												"screenId": document.getElementById('screenId').value,
 												"itemNo" : row.itemNo,
 												"itemNmEn" : itemNm,
+												"insideItemNmEn" : row.insideItemNmEn,
 												"component" : component,
 												"requiredKb" : row.requiredKb,
 												"searchConditionKb" : searchConditionKb,
@@ -591,9 +637,16 @@ function selectFormatter(cellval, opts, rowObject, icon, link_class,link_action,
 		}else{
 			 itemNo = rowObject.itemNo
 		}
+	var itemNm = ""
+		if (rowObject.itemNmEn == ""){
+			itemNm = '%20'
+		}else{
+			itemNm = rowObject.itemNmEn
+		}
+	var entityNm = document.getElementById('entityNmEn').value
 	var img = '<span class="ui-icon ' + icon + ' icon"><span/>';
 	var option = "m_win(this.href," + "'" + screenId  +  "'" + ",850,350);" + "return false;"
-	var link = '<a href="' + '/validation/' + opts.rowId + '/' + screenId + '/' + itemNo + '/' + 'select/"' + 'onClick=' + '"' + option + '"' +  '>' + img + '</a>'
+	var link = '<a href="' + '/validation/' + opts.rowId + '/' + screenId + '/' + entityNm + '/' + itemNo + '/' + itemNm + '/' + 'select/"' + 'onClick=' + '"' + option + '"' +  '>' + img + '</a>'
 	return link;
 
 }

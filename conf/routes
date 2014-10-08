@@ -19,7 +19,7 @@ POST    /screen/update/update/               controllers.maintenance.ScreenUpdat
 POST    /screen/allDelete/                   controllers.maintenance.ScreenUpdate.allDelete
 
 # Annotation page
-GET     /validation/:rowId/:screenId/:itemNo/select/   controllers.maintenance.AnnotationEdit.select(rowId:String, screenId:String,itemNo:String)
+GET     /validation/:rowId/:screenId/:entityNm/:itemNo/:itemNm/select/   controllers.maintenance.AnnotationEdit.select(rowId:String, screenId:String, entityNm:String, itemNo:String, itemNm:String)
 
 GET     /generate/screenSearch/                                         controllers.maintenance.ScreenSearch.index
 POST    /generate/screenSearch/search/                                  controllers.maintenance.ScreenSearch.search
