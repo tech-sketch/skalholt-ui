@@ -10,6 +10,7 @@ import skalholt.codegen.main.{ Generate => Skalholt }
 import play.api.Logger
 import play.api.mvc._
 import play.cache.Cache
+import scala.slick.ast.ColumnOption.PrimaryKey
 
 object Generate extends CommonController with GenerateForm {
 
@@ -56,6 +57,10 @@ object Generate extends CommonController with GenerateForm {
           if (model.tables.length <= 0) {
             BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
           } else {
+            val primaryKey =  model.tables.head.columns.exists(_.options.contains(PrimaryKey))
+            if (primaryKey == false)
+                BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Primary key does not exist in the table").bindFromRequest))
+            else
             try {
 
               Cache.set("genparam", param)
