@@ -637,16 +637,11 @@ function selectFormatter(cellval, opts, rowObject, icon, link_class,link_action,
 		}else{
 			 itemNo = rowObject.itemNo
 		}
-	var itemNm = ""
-		if (rowObject.itemNmEn == ""){
-			itemNm = '%20'
-		}else{
-			itemNm = rowObject.itemNmEn
-		}
+	var insideItemNmEn = rowObject.insideItemNmEn
 	var entityNm = document.getElementById('entityNmEn').value
 	var img = '<span class="ui-icon ' + icon + ' icon"><span/>';
 	var option = "m_win(this.href," + "'" + screenId  +  "'" + ",850,350);" + "return false;"
-	var link = '<a href="' + '/validation/' + opts.rowId + '/' + screenId + '/' + entityNm + '/' + itemNo + '/' + itemNm + '/' + 'select/"' + 'onClick=' + '"' + option + '"' +  '>' + img + '</a>'
+	var link = '<a href="' + '/validation/' + opts.rowId + '/' + screenId + '/' + entityNm + '/' + itemNo + '/' + insideItemNmEn + '/' + 'select/"' + 'onClick=' + '"' + option + '"' +  '>' + img + '</a>'
 	return link;
 
 }

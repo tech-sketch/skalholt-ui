@@ -17,14 +17,14 @@ import skalholt.codegen.util.StringUtil._
 
 object AnnotationEdit extends CommonController with AnnotationEditForm {
   /** Select */
-  def select(rowId: String, screenId: String, entityNm: String, itemNo: String, itemNm: String) = DBAction.transaction { implicit request =>
+  def select(rowId: String, screenId: String, entityNm: String, itemNo: String, insideItemNmEn: String) = DBAction.transaction { implicit request =>
 
     val annotationType: String = Cache.get("genparam") match {
       case p: GenParam =>
         try {
           DBUtils.getModel(p.bizJdbcDriver.get, p.bizUrl.get, p.bizSchema.get, p.bizUser, p.bizPassword)
             .tables.filter(t => decapitalize(camelize(t.name.table)) == entityNm)
-            .head.columns.filter(n => decapitalize(camelize(n.name)) == itemNm)
+            .head.columns.filter(n => decapitalize(camelize(n.name)) == insideItemNmEn)
             .map(m => m.tpe).head
 
         } catch {
