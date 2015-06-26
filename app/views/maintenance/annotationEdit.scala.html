@@ -1,4 +1,4 @@
-@(annotationForm: Form[forms.maintenance.Anno], annotationDefinitionList:List[(models.Tables.AnnotationRow, (Option[String],Option[String],Option[String]))], rowId:String)
+@(annotationForm: Form[forms.maintenance.Anno], annotationDefinitionList:Seq[(models.Tables.AnnotationRow, (Option[String],Option[String],Option[String]))], rowId:String)(implicit messages: Messages)
 
 @import BootstrapHelper._
 

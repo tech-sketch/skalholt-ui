@@ -3,25 +3,28 @@ package controllers.maintenance
 import controllers.common.CommonController
 import play.api.libs.json._
 import play.api.mvc._
-import play.i18n.Messages
 import models.Tables._
-import models.db.generator._
-import forms.maintenance.{ ScreenUpdateForm, ScreenUpdateForms }
-import scala.collection.JavaConversions._
-import play.api.db.slick._
+import daos._
+import forms.maintenance.{ScreenUpdateForm, ScreenUpdateForms}
 import skalholt.codegen.constants.GenConstants.GenParam
 import play.cache.Cache
 import skalholt.codegen.database.common.DBUtils
 import skalholt.codegen.util.StringUtil._
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Success, Failure}
+import play.api.Play.current
+import play.api.i18n.Messages.Implicits._
 
-object ScreenUpdate extends CommonController with ScreenUpdateForm {
+class ScreenUpdate extends CommonController with ScreenUpdateForm {
   /** 初期 */
-  def index(screenId: String) = DBAction.transaction { implicit request =>
-    val screen = Screens.filterById(screenId)
-    val screenEntity = ScreenEntitys.filterByScreenId(screenId)
-    val itemAndAction = ScreenItems.findItemAndAction(screenId)
-    val screenItemAndAnnotations = ScreenItems.findAnnotationDefinition(screenId)
+  def index(screenId: String) = Action.async { implicit request =>
+    val screenf = Screens.filterById(screenId)
+    val screenEntityf = ScreenEntitys.filterByScreenId(screenId)
+    val itemAndActionf = ScreenItems.findItemAndAction(screenId)
 
+    val screenItemAndAnnotations = Await.result(ScreenItems.findAnnotationDefinition(screenId), Duration.Inf)
     val findDefinitionList: List[(ScreenItemRow, String)] =
       screenItemAndAnnotations.groupBy {
         case (screenItem, annotationCd) => screenItem
@@ -31,32 +34,38 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
         }.mkString(","))
       }.toList.sortBy(_._1(1))
 
-    val form = ScreenUpdateForms(
-      screen.screenId,
-      screen.screenNm,
-      screen.subsystemNmEn,
-      screen.screenType,
-      screenEntity.entityNmEn)
+    val (form, screen) = (Await.result(screenf, Duration.Inf), Await.result(screenEntityf, Duration.Inf)) match {
+      case (screen, screenEntity) => (ScreenUpdateForms(
+        screen.screenId,
+        screen.screenNm,
+        screen.subsystemNmEn,
+        screen.screenType,
+        screenEntity.entityNmEn), screen)
+    }
 
     val entityNmEns: Seq[(String, String)] = Cache.get("genparam") match {
       case p: GenParam =>
         try {
-          DBUtils.getModel(p.bizJdbcDriver.get, p.bizUrl.get, p.bizSchema.get, p.bizUser, p.bizPassword).
-            tables.map(t => (decapitalize(camelize(t.name.table)), decapitalize(camelize(t.name.table))))
+          DBUtils.getModel(p.bizJdbcDriver.get, p.bizUrl.get, p.bizSchema.get, p.bizUser, p.bizPassword)
+            .tables.map(t => (decapitalize(camelize(t.name.table)), decapitalize(camelize(t.name.table))))
         } catch {
           case e: Exception => Seq(("", "-- Tables is not found."))
         }
       case _ => Seq(("", "-- Tables is not found."))
     }
-    Ok(views.html.maintenance.screenUpdate(screenUpdateForm.fill(form), itemAndAction, findDefinitionList, entityNmEns, screen.screenNm))
+    itemAndActionf.map { case itemAndAction =>
+      Ok(views.html.maintenance.screenUpdate(screenUpdateForm.fill(form), itemAndAction, findDefinitionList, entityNmEns, screen.screenNm))
+    }
   }
 
   /** 更新 */
   private def j2sBI(jsValue: JsValue, target: String) = BigDecimal((jsValue \ (target)).as[String])
+
   private def j2s(jsValue: JsValue, target: String) = (jsValue \ (target)).as[String]
+
   private def j2os(jsValue: JsValue, target: String) = (jsValue \ (target)).asOpt[String]
 
-  private def updateScreens(screen: JsValue)(implicit request: DBSessionRequest[AnyContent]) =
+  private def updateScreens(screen: JsValue) =
     Screens.updateScreen(ScreenRow(
       j2s(screen, "screenId"),
       j2os(screen, "screenNm"),
@@ -71,7 +80,7 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
       None,
       None))
 
-  private def updateScreenEntitys(screen: JsValue)(implicit request: DBSessionRequest[AnyContent]) {
+  private def updateScreenEntitys(screen: JsValue) {
     ScreenEntitys.updateScreenEntity(
       ScreenEntityRow(
         j2s(screen, "screenId"),
@@ -80,7 +89,7 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
         j2os(screen, "entityNmEn")))
   }
 
-  private def insertScreenItems(item: JsValue)(implicit request: DBSessionRequest[AnyContent]) = {
+  private def insertScreenItems(item: JsValue) = {
     val domain = j2s(item, "screenId") + "-" + j2sBI(item, "itemNo")
     ScreenItems.insert(
       ScreenItemRow(
@@ -113,7 +122,7 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
         None))
   }
 
-  private def insertScreenActions(action: JsValue)(implicit request: DBSessionRequest[AnyContent]) =
+  private def insertScreenActions(action: JsValue) =
     ScreenActions.insert(
       ScreenActionRow(
         j2s(action, "screenId"),
@@ -125,11 +134,12 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
         j2os(action, "actionNmEn"),
         None))
 
-  def update = DBAction.transaction { implicit request =>
+  def update = Action.async { implicit request =>
 
     def createScreenItem(screenId: String)(implicit json: JsValue) = {
       /** All delete */
       ScreenItems.allDeleteScreenId(screenId)
+
       /** screenItem */
       (json \ "jsonItem").asOpt[JsArray].map { jsArray =>
         if (jsArray.value.exists(item => j2s(item, "itemNo").isEmpty)) BadRequest("")
@@ -146,7 +156,9 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
                   AnnotationDefinitions.insert(AnnotationDefinitionRow(domainCd, annotation, None, None, None, None, None, None, None))
                 }
               }
-            } else error
+            } else {
+              error
+            }
           }
           success
         }
@@ -157,6 +169,7 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
 
     def createScreenAction(screenId: String)(implicit json: JsValue) = {
       ScreenActions.allDeleteScreenIdActions(screenId)
+
       /** screenAction */
       (json \ "jsonAction").asOpt[JsArray].map { jsArray =>
         jsArray.value.foreach { action =>
@@ -172,39 +185,49 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
     }
 
     request.body.asJson.map { implicit json =>
+
       /** screen */
       (json \ "jsonScreen").asOpt[JsArray].map { jsArray =>
         val screen = jsArray.value.head
-
         val screenId = j2s(screen, "screenId")
-        val findScreenId = Screens.findByIdOpt(screenId)
-        if (findScreenId != None) {
+        Await.result(Screens.findByIdOpt(screenId), Duration.Inf) match {
+          case Some(_) =>
+            updateScreens(screen)
+            updateScreenEntitys(screen)
+            if (createScreenItem(screenId) == success) {
+              Future {
+                Ok("")
+              }
+            } else {
+              Future {
+                BadRequest("")
+              }
+            }
+          case _ =>
+            Future {
+              BadRequest("")
+            }
+        }
 
-          updateScreens(screen)
-          /** screenEntity */
-          updateScreenEntitys(screen)
-          if (createScreenItem(screenId) == success) {
-            Ok("")
-          } else {
-            BadRequest("")
-          }
-        } else {
+      }.getOrElse {
+        Future {
           BadRequest("")
         }
-      }.getOrElse {
-        BadRequest("")
       }
     }.getOrElse {
-      BadRequest("")
+      Future {
+        BadRequest("")
+      }
     }
   }
 
   /** all delete */
-  def allDelete = DBAction.transaction { implicit request =>
+  def allDelete = Action.async { implicit request =>
 
     def deleteAnnotationDefinition(screenId: String)(implicit json: JsValue) = {
       (json \ "jsonItem").asOpt[JsArray].map { jsArray =>
         jsArray.value.foreach { item =>
+
           /** annotation definition */
           val domainCd = screenId + "-" + (j2sBI(item, "itemNo"))
           AnnotationDefinitions.removeByDomainCd(domainCd)
@@ -227,16 +250,24 @@ object ScreenUpdate extends CommonController with ScreenUpdateForm {
           ScreenItems.allDeleteScreenId(screenId)
           ScreenActions.allDeleteScreenIdActions(screenId)
           deleteAnnotationDefinition(screenId)
-          Ok("")
+          Future {
+            Ok("")
+          }
         } else {
-          BadRequest("")
+          Future {
+            BadRequest("")
+          }
         }
       }.getOrElse {
-        BadRequest("")
+        Future {
+          BadRequest("")
+        }
       }
 
     }.getOrElse {
-      BadRequest("")
+      Future {
+        BadRequest("")
+      }
     }
 
   }

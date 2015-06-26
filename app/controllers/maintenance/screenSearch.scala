@@ -1,23 +1,24 @@
 package controllers.maintenance
 
 import controllers.common.CommonController
+import daos.Screens
 import play.api.mvc._
-import models.db.generator.Screens
-import models.Tables._
-import forms.maintenance.{ ScreenSearchForm, ScreenSearchForms }
-import play.api.libs.json._
-import play.api.db.slick._
+import forms.maintenance.ScreenSearchForm
 import play.cache.Cache
 import skalholt.codegen.constants.GenConstants.GenParam
 import skalholt.codegen.database.common.DBUtils
 import skalholt.codegen.util.StringUtil._
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.Play.current
+import play.api.i18n.Messages.Implicits._
 
-object ScreenSearch extends CommonController with ScreenSearchForm {
+class ScreenSearch extends CommonController with ScreenSearchForm {
   /** 初期 */
-  def index = DBAction.transaction { implicit request =>
+  def index = Action.async { implicit request =>
     screenSearchForm.bindFromRequest.fold(
       hasErrors = { form =>
-        BadRequest(views.html.maintenance.screenSearch(form, null, Seq.empty))
+        Future{BadRequest(views.html.maintenance.screenSearch(form, null, Seq.empty))}
       },
       success = { form =>
 
@@ -26,15 +27,15 @@ object ScreenSearch extends CommonController with ScreenSearchForm {
         val entityNmEns: Seq[(String, String)] = Cache.get("genparam") match {
           case p: GenParam =>
             try {
-              DBUtils.getModel(p.bizJdbcDriver.get, p.bizUrl.get, p.bizSchema.get, p.bizUser, p.bizPassword).
-                tables.map(t => (decapitalize(camelize(t.name.table)), decapitalize(camelize(t.name.table))))
+              DBUtils.getTables(p.bizJdbcDriver.get, p.bizUrl.get, p.bizSchema.get, p.bizUser, p.bizPassword)
+                .map(t => (decapitalize(camelize(t.name.name)), decapitalize(camelize(t.name.name))))
             } catch {
               case e: Exception => Seq(("", "-- Tables is not found."))
             }
           case _ => Seq(("", "-- Tables is not found."))
         }
 
-        Ok(views.html.maintenance.screenSearch(screenSearchForm, screens, entityNmEns))
+        screens.map( res => Ok(views.html.maintenance.screenSearch(screenSearchForm, res, entityNmEns)))
       })
 
   }
@@ -48,18 +49,16 @@ object ScreenSearch extends CommonController with ScreenSearchForm {
       form.entityNmEn)
 
   /** 検索 */
-  def search = DBAction.transaction { implicit request =>
+  def search = Action.async { implicit request =>
     screenSearchForm.bindFromRequest.fold(
       hasErrors = { form =>
-        BadRequest(views.html.maintenance.screenSearch(form, null,Seq.empty))
+        Future{BadRequest(views.html.maintenance.screenSearch(form, null,Seq.empty))}
       },
       success = { form =>
 
         val screens = Screens.filterWithEntity(form)
-        Ok(views.html.maintenance.screenSearch(screenSearchForm.bindFromRequest, screens, Seq.empty))
+        screens.map(res => Ok(views.html.maintenance.screenSearch(screenSearchForm.bindFromRequest, res, Seq.empty)))
       })
-
   }
-
 }
 

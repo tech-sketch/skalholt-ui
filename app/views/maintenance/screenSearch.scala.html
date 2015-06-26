@@ -1,4 +1,4 @@
-@(screenSearchForm: Form[forms.maintenance.ScreenSearchForms],screens: List[(models.Tables.ScreenRow, Option[String])], entityNmEns: Seq[(String,String)])(implicit flash:Flash)
+@(screenSearchForm: Form[forms.maintenance.ScreenSearchForms],screens: Seq[(models.Tables.ScreenRow, Option[String])], entityNmEns: Seq[(String,String)])(implicit flash:Flash, messages: Messages)
 @import BootstrapHelperSm._
 
 @mainGenerator("Screen search"){

@@ -1,20 +1,23 @@
 package controllers.generate
 
 import controllers.common.CommonController
-import forms.generate.{ GenerateForm, GenerateForms }
+import forms.generate.{GenerateForm, GenerateForms}
 import java.io.File
-import java.lang.Exception
 import skalholt.codegen.constants.GenConstants.GenParam
 import skalholt.codegen.database.common.DBUtils
-import skalholt.codegen.main.{ Generate => Skalholt }
+import skalholt.codegen.main.{Generate => Skalholt}
 import play.api.Logger
-import play.api.mvc._
 import play.cache.Cache
-import scala.slick.ast.ColumnOption.PrimaryKey
+import slick.ast.ColumnOption.PrimaryKey
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.Play.current
+import play.api.i18n.Messages.Implicits._
 
-object Generate extends CommonController with GenerateForm {
+class Generate extends CommonController with GenerateForm {
 
   val separator = System.getProperty("file.separator")
+
   def index = CommonAction { implicit request =>
 
     val currentDir = new File(".").getAbsoluteFile().getParent().replace(s"${separator}skalholt${separator}bin", "")
@@ -34,13 +37,17 @@ object Generate extends CommonController with GenerateForm {
         GenerateForms(None, None, None, None, None, None, currentDir, None, None)
     }
 
-    Ok(views.html.generate.generate(generateForm.fill(form)))
+    Future {
+      Ok(views.html.generates.generate(generateForm.fill(form)))
+    }
   }
 
   def generateAll = CommonAction { implicit request =>
     generateForm.bindFromRequest.fold(
       hasErrors = { form =>
-        Ok(views.html.generate.generate(form))
+        Future {
+          Ok(views.html.generates.generate(form))
+        }
       },
       success = { form =>
         val pkg = Some("models")
@@ -55,28 +62,38 @@ object Generate extends CommonController with GenerateForm {
         try {
           val model = DBUtils.getModel(form.jdbcDriver.get, form.url.get, form.schema.get, form.user, password)
           if (model.tables.length <= 0) {
-            BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
-          } else {
-           val praimaryKey = model.tables.forall( t => {
-              t.columns.exists(_.options.contains(PrimaryKey))
-             } )
-            if (praimaryKey == false)
-                BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Primary key does not exist in the table").bindFromRequest))
-            else
-            try {
-
-              Cache.set("genparam", param)
-              Skalholt.all(param)
-              Redirect(controllers.generate.routes.Generate.index)
-                .flashing("success" -> "You have now generated the source code.")
-            } catch {
-              case e: Exception =>
-                BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
+            Future {
+              BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
             }
+          } else {
+            val praimaryKey = model.tables.forall(t => {
+              t.columns.exists(_.options.contains(PrimaryKey))
+            })
+            if (praimaryKey == false)
+              Future {
+                BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Primary key does not exist in the table").bindFromRequest))
+              }
+            else
+              try {
+
+                Cache.set("genparam", param)
+                Skalholt.all(param)
+                Future {
+                  Redirect(controllers.generate.routes.Generate.index)
+                    .flashing("success" -> "You have now generated the source code.")
+                }
+              } catch {
+                case e: Exception =>
+                  Future {
+                    BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
+                  }
+              }
           }
         } catch {
           case e: Exception =>
-            BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
+            Future {
+              BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
+            }
         }
 
       })
@@ -85,7 +102,9 @@ object Generate extends CommonController with GenerateForm {
   def importData = CommonAction { implicit request =>
     generateForm.bindFromRequest.fold(
       hasErrors = { form =>
-        Ok(views.html.generate.generate(form))
+        Future {
+          Ok(views.html.generates.generate(form))
+        }
       },
       success = { form =>
         val pkg = Some("models")
@@ -99,22 +118,30 @@ object Generate extends CommonController with GenerateForm {
         try {
           val model = DBUtils.getModel(form.jdbcDriver.get, form.url.get, form.schema.get, form.user, form.password)
           if (model.tables.length <= 0) {
-            BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
+            Future {
+              BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
+            }
           } else {
             try {
 
               Cache.set("genparam", param)
               Skalholt.importData(param)
-              Redirect(controllers.generate.routes.Generate.index)
-                .flashing("success" -> "You have now imported database schema.")
+              Future {
+                Redirect(controllers.generate.routes.Generate.index)
+                  .flashing("success" -> "You have now imported database schema.")
+              }
             } catch {
               case e: Exception =>
-                BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
+                Future {
+                  BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
+                }
             }
           }
         } catch {
           case e: Exception =>
-            BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
+            Future {
+              BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
+            }
         }
 
       })
@@ -123,7 +150,9 @@ object Generate extends CommonController with GenerateForm {
   def generate = CommonAction { implicit request =>
     generateForm.bindFromRequest.fold(
       hasErrors = { form =>
-        Ok(views.html.generate.generate(form))
+        Future {
+          Ok(views.html.generates.generate(form))
+        }
       },
       success = { form =>
         val pkg = Some("models")
@@ -133,22 +162,30 @@ object Generate extends CommonController with GenerateForm {
         try {
           val model = DBUtils.getModel(form.jdbcDriver.get, form.url.get, form.schema.get, form.user, form.password)
           if (model.tables.length <= 0) {
-            BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
+            Future {
+              BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
+            }
           } else {
             try {
 
               Cache.set("genparam", param)
               Skalholt.generate(param)
-              Redirect(controllers.generate.routes.Generate.index)
-                .flashing("success" -> "You have now imported database schema and generated the source code.")
+              Future {
+                Redirect(controllers.generate.routes.Generate.index)
+                  .flashing("success" -> "You have now imported database schema and generated the source code.")
+              }
             } catch {
               case e: Exception =>
-                BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
+                Future {
+                  BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
+                }
             }
           }
         } catch {
           case e: Exception =>
-            BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
+            Future {
+              BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
+            }
         }
 
       })
@@ -174,23 +211,33 @@ object Generate extends CommonController with GenerateForm {
         try {
           val model = DBUtils.getModel(form.jdbcDriver.get, form.url.get, form.schema.get, form.user, form.password)
           if (model.tables.length <= 0) {
-            BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
+            Future {
+              BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
+            }
           } else {
             try {
               Skalholt.generate(param)
-              Redirect(controllers.generate.routes.Generate.index)
-                .flashing("success" -> "You have now imported database schema and generated the source code.")
+              Future {
+                Redirect(controllers.generate.routes.Generate.index)
+                  .flashing("success" -> "You have now imported database schema and generated the source code.")
+              }
             } catch {
               case e: Exception =>
-                BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
+                Future {
+                  BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
+                }
             }
           }
         } catch {
           case e: Exception =>
-            BadRequest(views.html.generate.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
+            Future {
+              BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
+            }
         }
       case _ =>
-        BadRequest(views.html.generate.generate(generateForm.withGlobalError("Code generate error.").bindFromRequest))
+        Future {
+          BadRequest(views.html.generates.generate(generateForm.withGlobalError("Code generate error.").bindFromRequest))
+        }
     }
 
   }

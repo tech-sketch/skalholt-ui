@@ -1,4 +1,4 @@
-@(screenUpdateForm: Form[forms.maintenance.ScreenUpdateForms],itemAndAction:List[(BigDecimal,models.Tables.ScreenActionRow)], findDefinition:List[(models.Tables.ScreenItemRow,String)], entityNmEns: Seq[(String,String)],screenNm: Option[String])(implicit flash: Flash)
+@(screenUpdateForm: Form[forms.maintenance.ScreenUpdateForms],itemAndAction:Seq[(BigDecimal,models.Tables.ScreenActionRow)], findDefinition:Seq[(models.Tables.ScreenItemRow,String)], entityNmEns: Seq[(String,String)],screenNm: Option[String])(implicit flash: Flash, messages: Messages)
 @import BootstrapHelperSm._
 
 @mainGenerator("Screen Update"){
@@ -525,7 +525,7 @@
         		            $.ajax({
         		                type: 'POST',
         		                url: '/screen/update/update/',
-        		                async: false,    // 非同期通信フラグ
+        		                async: true,    // 非同期通信フラグ
         		                data:
             		                JSON.stringify(
             		                		{ jsonScreen : screens,

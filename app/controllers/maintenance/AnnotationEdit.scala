@@ -1,23 +1,22 @@
 package controllers.maintenance
 
 import controllers.common.CommonController
-import models.db.generator._
-import models.Tables._
-import forms.maintenance.{ AnnotationEditForm, AnnotationForms, Anno }
-import play.api.db._
+import daos.AnnotationDefinitions
+import forms.maintenance.{AnnotationEditForm}
 import play.api.mvc._
-import play.api.db.slick._
-import scala.collection.JavaConversions._
-import scala.util.control.Breaks
-import skalholt.codegen.database.{ Screens, ScreenItems, ScreenEntitys, ScreenActions }
+import scala.concurrent.duration.Duration
 import play.cache.Cache
 import skalholt.codegen.constants.GenConstants.GenParam
 import skalholt.codegen.database.common.DBUtils
 import skalholt.codegen.util.StringUtil._
+import play.api.Play.current
+import play.api.i18n.Messages.Implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
 
-object AnnotationEdit extends CommonController with AnnotationEditForm {
+class AnnotationEdit extends CommonController with AnnotationEditForm {
   /** Select */
-  def select(rowId: String, screenId: String, entityNm: String, itemNo: String, insideItemNmEn: String) = DBAction.transaction { implicit request =>
+  def select(rowId: String, screenId: String, entityNm: String, itemNo: String, insideItemNmEn: String) = Action.async { implicit request =>
 
     val annotationType: String = Cache.get("genparam") match {
       case p: GenParam =>
@@ -34,35 +33,25 @@ object AnnotationEdit extends CommonController with AnnotationEditForm {
     }
 
     val domainCd = screenId + "-" + itemNo
-    val annotationJoin = AnnotationDefinitions.joinAnnotationAndDefinition(domainCd)
-    val annotationList = annotationType match {
-      case "Int" => {
+    val annotationJoin = Await.result(AnnotationDefinitions.joinAnnotationAndDefinition(domainCd), Duration.Inf)
+    val annotationList = (annotationType match {
+      case "Int" =>
         annotationJoin.filter(t => t._1.annotationCd == "number")
-      }
-      case "String" => {
+      case "String" =>
         annotationJoin.filter(t => t._1.annotationCd == "text")
-
-      }
-      case "java.sql.Date" => {
-        annotationJoin.filter(t => t._1.annotationCd == "sqlDate") ::: annotationJoin.filter(t => t._1.annotationCd == "sqlTimestamp")
-
-      }
-      case "scala.math.BigDecimal" => {
+      case "java.sql.Date" =>
+        annotationJoin.filter(t => t._1.annotationCd == "sqlDate") ++ annotationJoin.filter(t => t._1.annotationCd == "sqlTimestamp")
+      case "scala.math.BigDecimal" =>
         annotationJoin.filter(t => t._1.annotationCd == "bigDecimal")
-
-      }
-      case "Long" => {
+      case "Long" =>
         annotationJoin.filter(t => t._1.annotationCd == "longNumber")
-      }
-      case _ => {
+      case _ =>
         annotationJoin
-      }
+    }).map(t => (t._1, t._2.getOrElse((None, None, None))))
 
+    Future {
+      Ok(views.html.maintenance.annotationEdit(annotationForm, annotationList, rowId))
     }
-
-    Ok(views.html.maintenance.annotationEdit(annotationForm, annotationList, rowId))
-
   }
-
 }
 

@@ -1,30 +1,30 @@
-package models.db.generator
+package daos
 
 import models.Tables._
-import models.Tables.profile.simple._
-
-import play.api.db.DB
-import play.api.Play.current
-import scala.slick.driver.H2Driver.simple._
-import scala.language.postfixOps
+import slick.driver.H2Driver.api._
+import scala.concurrent.Future
 
 object AnnotationDefinitions extends AbstractAnnotationDefinitions {
 
   /** Delete */
-  def removeByDomainCd(domainCd :String) (implicit s: Session) =
-    AnnotationDefinition.filter(t => t.domainCd === domainCd).delete
+  def removeByDomainCd(domainCd: String) = {
+    val q = AnnotationDefinition.filter(t => t.domainCd === domainCd).delete
+    db.run(q)
+  }
 
   /** domainCd only */
-  def filterByDomainCd(domainCd :String)(implicit s: Session) =
-    AnnotationDefinition.filter(t => t.domainCd === domainCd).firstOption
+  def filterByDomainCd(domainCd: String) = {
+    val q = AnnotationDefinition.filter(t => t.domainCd === domainCd).result
+    db.run(q.headOption)
+  }
 
-   def joinAnnotationAndDefinition(domainCd:String)(implicit s:Session): List[(AnnotationRow, (Option[String], Option[String], Option[String]))] = {
-    val q = for{
-      (a,ad) <- Annotation leftJoin AnnotationDefinition on { case (a, ad) => a.annotationCd === ad.annotationCd && ad.domainCd === domainCd}
+  def joinAnnotationAndDefinition(domainCd: String): Future[Seq[(AnnotationRow, Option[(Option[String], Option[String], Option[String])])]] = {
+    val q = for {
+      (a, ad) <- Annotation joinLeft AnnotationDefinition on { case (a, ad) => a.annotationCd === ad.annotationCd && ad.domainCd === domainCd }
 
-    }yield(a,(ad.definitionValue1, ad.definitionValue2, ad.definitionValue3))
+    } yield (a, ad.map(t => (t.definitionValue1, t.definitionValue2, t.definitionValue3)))
 
-    q.list
+    db.run(q.result)
   }
 
 }

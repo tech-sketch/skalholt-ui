@@ -5,6 +5,7 @@ You can also generate souce codes on web browser.
 
 # Release Notes
 
+- 06/26/2015 ver.0.1.3
 - 02/23/2015 ver.0.1.2
 - 10/15/2014 ver.0.1.1
 - 09/05/2014 ver.0.1.0
@@ -22,7 +23,7 @@ You can also generate souce codes on web browser.
 Please send feedback to us.
 
 [TIS Inc.](http://www.tis.com/)
-Strategic Technology Center
+System Development Technology R&D Office
 Skalholt team
 <smart_dev@ml.tis.co.jp>.
 

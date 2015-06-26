@@ -1,36 +1,33 @@
-package models.db.generator
+package daos
 
 import models.Tables._
-import models.Tables.profile.simple._
-import play.api.db.DB
-import play.api.Play.current
-import scala.slick.driver.H2Driver.simple._
-import scala.language.postfixOps
+import scala.concurrent.Future
+import slick.driver.H2Driver.api._
 
 object Screens extends AbstractScreens {
 
   /** ScreenEntity filter */
-  def filterWithEntity(form: Product)(implicit s: Session): List[(ScreenRow, Option[String])] = {
-    (for (
+  def filterWithEntity(form: Product): Future[Seq[(ScreenRow, Option[String])]] = {
+    val a = (for (
       screen <- filter(form, Screen);
       entity <- filter(form, ScreenEntity) if screen.screenId === entity.screenId
-    ) yield (screen, entity.entityNmEn)).sortBy { _._1.screenId }.list
+    ) yield (screen, entity.entityNmEn)).sortBy {
+      _._1.screenId
+    }
+    db.run(a.result)
   }
 
-  /** ID検索 */
-  def findByIdOpt(screenId: String)(implicit s: Session) =
-    Screen.filter(t => t.screenId === screenId).firstOption
+  /** ID?? */
+  def findByIdOpt(screenId: String) =
+    db.run(Screen.filter(t => t.screenId === screenId).result.headOption)
 
-  /** screen update*/
-  def updateScreen(e: ScreenRow)(implicit s: Session) ={
-    Screen.filter(_.screenId === e.screenId).map(_.screenId).update(e.screenId)
-    Screen.filter(_.screenId === e.screenId).map(_.screenNm).update(e.screenNm)
-    Screen.filter(_.screenId === e.screenId).map(_.jspNm).update(e.jspNm)
-    Screen.filter(_.screenId === e.screenId).map(_.useCaseNm).update(e.useCaseNm)
-    Screen.filter(_.screenId === e.screenId).map(_.actionClassId).update(e.actionClassId)
-    Screen.filter(_.screenId === e.screenId).map(_.subsystemNmJa).update(e.subsystemNmJa)
-    Screen.filter(_.screenId === e.screenId).map(_.subsystemNmEn).update(e.subsystemNmEn)
-    Screen.filter(_.screenId === e.screenId).map(_.screenType).update(e.screenType)
+  /** screen update */
+  def updateScreen(e: ScreenRow) = {
+    val a = Screen.filter(_.screenId === e.screenId)
+      .map { s => (s.screenId, s.screenNm, s.jspNm, s.useCaseNm, s.actionClassId, s.subsystemNmJa, s.subsystemNmEn, s.screenType) }
+      .update(e.screenId, e.screenNm, e.jspNm, e.useCaseNm, e.actionClassId, e.subsystemNmJa, e.subsystemNmEn, e.screenType)
+
+    db.run(a)
   }
 
 }

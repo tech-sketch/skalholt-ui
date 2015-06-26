@@ -1,10 +1,16 @@
 package daos.common
 
 import java.lang.reflect.Field
-import daos.common.DaoUtil._
-import scala.slick.driver.H2Driver.simple._
+import DaoUtil._
+import slick.driver.JdbcProfile
+import play.api.db.slick.{HasDatabaseConfig, DatabaseConfigProvider}
+import scala.concurrent.Future
+import play.api.Play
+import slick.driver.H2Driver.api._
 
-abstract class AbstractDao {
+
+abstract class AbstractDao extends HasDatabaseConfig[JdbcProfile] {
+  val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
 
   def filter[A, B](condition: Any, q: Query[A, B, Seq]): Query[A, B, Seq] = {
 

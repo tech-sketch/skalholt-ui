@@ -1,7 +1,4 @@
-package models.db.generator
-
-import models.Tables._
-import scala.slick.driver.H2Driver.simple._
+package daos
 
 object Annotations extends AbstractAnnotations {
 

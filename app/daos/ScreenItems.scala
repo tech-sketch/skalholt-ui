@@ -1,32 +1,31 @@
-package models.db.generator
+package daos
 
 import models.Tables._
-import models.Tables.profile.simple._
-import play.api.db.DB
-import play.api.Play.current
-import scala.slick.driver.H2Driver.simple._
-import scala.language.postfixOps
+import slick.driver.H2Driver.api._
+import scala.concurrent.Future
 
 object ScreenItems extends AbstractScreenItems {
 
-  /** screenIdのみで削除 */
-  def allDeleteScreenId(screenId: String)(implicit s: Session) =
-    ScreenItem.filter(t => t.screenId === screenId).delete
-
-  def findAnnotationDefinition(screenId: String)(implicit s: Session) = {
-    val q = for {
-      (i, a) <- ScreenItem leftJoin AnnotationDefinition on (_.domainCd === _.domainCd)
-      if (i.screenId === screenId)
-    } yield (i, a.annotationCd.?)
-    q.list
+  /** screenId?? */
+  def allDeleteScreenId(screenId: String) =    {
+    val q = ScreenItem.filter(t => t.screenId === screenId).delete
+    db.run(q)
   }
 
-  def findItemAndAction(screenId: String)(implicit s: Session): List[(BigDecimal, models.Tables.ScreenActionRow)] = {
+  def findAnnotationDefinition(screenId: String):Future[Seq[(ScreenItemRow,Option[String])]] = {
+    val q = for {
+      (i, a) <- ScreenItem joinLeft AnnotationDefinition on (_.domainCd === _.domainCd)
+      if (i.screenId === screenId)
+    } yield (i, a.map(_.annotationCd))
+    db.run(q.result)
+  }
+
+  def findItemAndAction(screenId: String): Future[Seq[(BigDecimal, models.Tables.ScreenActionRow)]] = {
     val q =
       for {
         i <- ScreenItem if i.screenId === screenId
         a <- ScreenAction if (a.screenId === screenId && i.actionId === a.actionId)
       } yield (i.itemNo, a)
-    q.list
+    db.run(q.result)
   }
 }

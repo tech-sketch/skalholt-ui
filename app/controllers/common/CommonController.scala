@@ -1,24 +1,22 @@
 package controllers.common
 
-import play.api._
 import play.api.mvc._
-import play.api.db.slick._
+import scala.concurrent.Future
 
 abstract class CommonController extends Controller {
 
   val success = "success"
   val error = "error"
 
-  def CommonAction(f: Request[AnyContent] => Result): Action[AnyContent] = {
+  def CommonAction(f: Request[AnyContent] => Future[Result]): Action[AnyContent] = {
     LoggingAction {
-      request =>
-        f(request)
+      f
     }
   }
 
-  def LoggingAction(f: Request[AnyContent] => Result): Action[AnyContent] = {
-    DBAction.transaction { request =>
-      f(request)
+  def LoggingAction(f: Request[AnyContent] => Future[Result]): Action[AnyContent] = {
+    Action.async {
+      f
     }
   }
 }

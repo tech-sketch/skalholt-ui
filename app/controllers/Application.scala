@@ -1,12 +1,14 @@
 package controllers
 
-import play.api._
 import play.api.mvc._
+import scala.concurrent.ExecutionContext.Implicits.global
 
-object Application extends Controller {
+import scala.concurrent.Future
 
-  def index = Action {
-    Redirect(controllers.generate.routes.Generate.index)
+class Application extends Controller {
+
+  def index = Action.async {
+    Future{Redirect(controllers.generate.routes.Generate.index)}
   }
 
 }

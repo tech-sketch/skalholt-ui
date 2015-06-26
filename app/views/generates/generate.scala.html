@@ -1,10 +1,10 @@
-@(genForm: Form[forms.generate.GenerateForms])(implicit flash: Flash)
+@(genForm: Form[forms.generate.GenerateForms])(implicit flash: Flash, messages: Messages)
 
 @import BootstrapHelper._
 
 @main("Skalholt") {
 
-  @messages(genForm)
+  @messagesout(genForm)
   @helper.form(action = controllers.generate.routes.Generate.generateAll(), 'role -> "form", 'class -> "form-horizontal"){
  <script  type="text/javascript">
    function submitform(action){

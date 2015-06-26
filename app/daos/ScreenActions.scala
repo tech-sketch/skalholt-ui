@@ -1,17 +1,14 @@
-package models.db.generator
+package daos
 
 import models.Tables._
-import models.Tables.profile.simple._
-import play.api.db.DB
-import play.api.Play.current
-import scala.slick.driver.H2Driver.simple._
-import scala.language.postfixOps
+import slick.driver.H2Driver.api._
 
 object ScreenActions extends AbstractScreenActions {
 
-  /** screenIdのみで削除 */
-  def allDeleteScreenIdActions(screenId: String)(implicit s: Session) =
-    ScreenAction.filter(t => t.screenId === screenId).delete
-
+  /** screenId?? */
+  def allDeleteScreenIdActions(screenId: String) = {
+    val q = ScreenAction.filter(t => t.screenId === screenId).delete
+    db.run(q)
+  }
 
 }

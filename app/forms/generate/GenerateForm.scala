@@ -2,7 +2,6 @@ package forms.generate
 
 import play.api.data._
 import play.api.data.Forms._
-import java.sql.Date
 
 case class GenerateForms(
   slickDriver: Option[String],
