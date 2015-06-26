@@ -29,8 +29,8 @@
           </div>
           <div class="col-md-6">
             @helper.select(genForm("slickDriver"),
-             Seq(("scala.slick.driver.H2Driver"-> "scala.slick.driver.H2Driver"),("scala.slick.driver.PostgresDriver"-> "scala.slick.driver.PostgresDriver")),
-             '_label -> "Slick Driver", '_help -> "Fully qualified name of Slick driver class, e.g. “scala.slick.driver.H2Driver”")
+             Seq(("slick.driver.H2Driver"-> "slick.driver.H2Driver"),("slick.driver.PostgresDriver"-> "slick.driver.PostgresDriver")),
+             '_label -> "Slick Driver", '_help -> "Fully qualified name of Slick driver class, e.g. “slick.driver.H2Driver”")
 
             @helper.select(genForm("jdbcDriver"),
              Seq(("org.h2.Driver"-> "org.h2.Driver"),("org.postgresql.Driver"-> "org.postgresql.Driver")),
