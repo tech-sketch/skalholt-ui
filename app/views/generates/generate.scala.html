@@ -35,7 +35,7 @@
             @helper.select(genForm("jdbcDriver"),
              Seq(("org.h2.Driver"-> "org.h2.Driver"),("org.postgresql.Driver"-> "org.postgresql.Driver")),
               '_label -> "Jdbc Driver", '_help -> "Fully qualified name of jdbc driver class, e.g. “org.h2.Driver”")
-            @helper.inputText(genForm("url"), '_label -> "Url", '_help -> "jdbc url, e.g. “jdbc:postgresql://localhost/test”")
+            @helper.inputText(genForm("url"), '_label -> "Url", '_help -> "jdbc url, e.g. “jdbc:postgresql://localhost/./test”")
           </div>
         </div>
         <div class="row">

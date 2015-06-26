@@ -12,7 +12,7 @@ object Global extends GlobalSettings {
     val param = GenParam(
       Some("scala.slick.driver.H2Driver"),
       Some("org.h2.Driver"),
-      Some("jdbc:h2:tcp://localhost:9092/skalholt"),
+      Some("jdbc:h2:tcp://localhost:9092/./skalholt"),
       Some("sa"),
       Some(""),
       Some("SAMPLE"),
