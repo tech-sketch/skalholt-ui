@@ -66,12 +66,13 @@ class Generate extends CommonController with GenerateForm {
               BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("No tables.").bindFromRequest))
             }
           } else {
-            val praimaryKey = model.tables.forall(t => {
-              t.columns.exists(_.options.contains(PrimaryKey))
-            })
-            if (praimaryKey == false)
+            val tableNms = model.tables.filter(t => {
+              t.primaryKey.isEmpty && !t.columns.exists(_.options.contains(PrimaryKey))
+            }).map(t => t.name.table)
+
+            if (!tableNms.isEmpty)
               Future {
-                BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Primary key does not exist in the table").bindFromRequest))
+                BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError(s"Primary key does not exist in the tables[${tableNms.mkString(", ")}].").bindFromRequest))
               }
             else
               try {
