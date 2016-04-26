@@ -86,6 +86,7 @@ class Generate extends CommonController with GenerateForm {
               } catch {
                 case e: Exception =>
                   Future {
+                    e.printStackTrace
                     BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
                   }
               }
@@ -93,6 +94,7 @@ class Generate extends CommonController with GenerateForm {
         } catch {
           case e: Exception =>
             Future {
+              e.printStackTrace
               BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
             }
         }
@@ -134,6 +136,7 @@ class Generate extends CommonController with GenerateForm {
             } catch {
               case e: Exception =>
                 Future {
+                  e.printStackTrace
                   BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
                 }
             }
@@ -141,6 +144,7 @@ class Generate extends CommonController with GenerateForm {
         } catch {
           case e: Exception =>
             Future {
+              e.printStackTrace
               BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
             }
         }
@@ -178,6 +182,7 @@ class Generate extends CommonController with GenerateForm {
             } catch {
               case e: Exception =>
                 Future {
+                  e.printStackTrace
                   BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
                 }
             }
@@ -185,6 +190,7 @@ class Generate extends CommonController with GenerateForm {
         } catch {
           case e: Exception =>
             Future {
+              e.printStackTrace
               BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
             }
         }
@@ -225,6 +231,7 @@ class Generate extends CommonController with GenerateForm {
             } catch {
               case e: Exception =>
                 Future {
+                  e.printStackTrace
                   BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Generator failure.").bindFromRequest))
                 }
             }
@@ -232,6 +239,7 @@ class Generate extends CommonController with GenerateForm {
         } catch {
           case e: Exception =>
             Future {
+              e.printStackTrace
               BadRequest(views.html.generates.generate(generateForm.fill(form).withGlobalError("Database connection error.").bindFromRequest))
             }
         }
